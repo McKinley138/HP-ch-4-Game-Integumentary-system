@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Integumentary System Lab Challenge</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --text-color: #2c3e50;
+            --land-color: #d4e157;
+            --water-color: #81d4fa;
+            --special-color: #ffcc80;
+            --accent-blue: #3498db;
+            --error-red: #e74c3c;
+            --gold: #d4af37;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+            user-select: none;
+        }
+
+        /* --- OVERLAYS --- */
+        .screen-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-screen {
+            display: flex;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+        }
+
+        .name-input {
+            padding: 15px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            border: none;
+            margin: 20px;
+            width: 300px;
+            text-align: center;
+            outline: none;
+        }
+
+        /* --- CERTIFICATE STYLE --- */
+        #certificate {
+            display: none;
+            background: white;
+            color: #333;
+            width: 800px;
+            padding: 40px;
+            border: 15px double var(--gold);
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            position: relative;
+            text-align: center;
+        }
+
+        .cert-title {
+            font-family: 'Georgia', serif;
+            font-size: 3rem;
+            color: #b8860b;
+            margin-bottom: 10px;
+        }
+
+        .cert-name {
+            font-size: 2.5rem;
+            font-style: italic;
+            border-bottom: 2px solid #333;
+            display: inline-block;
+            margin: 20px 0;
+            padding: 0 50px;
+            font-family: 'Brush Script MT', cursive;
+        }
+
+        .cert-text {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+
+        .instruction-box {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ffeeba;
+            margin-top: 30px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        /* --- GAME ELEMENTS --- */
+        #mistake-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 3px solid var(--error-red);
+            color: var(--error-red);
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 3000;
+            pointer-events: none;
+            display: none;
+        }
+
+        .orbit-lane {
+            position: absolute; 
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .main-content {
+            width: 850px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            margin-bottom: 200px;
+            display: none;
+        }
+
+        #header {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            width: 100%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .stats {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            width: 100%;
+            margin: 30px 0 10px 0;
+            font-size: 1.6rem;
+            font-weight: bold;
+            border-bottom: 3px solid #ccc;
+            padding-bottom: 5px;
+            text-align: center;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px 0;
+            width: 100%;
+        }
+
+        .biome-zone {
+            border: 3px dashed #999;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .land { background-color: #f1f8e9; border-color: #8bc34a; }
+        .water { background-color: #e1f5fe; border-color: #03a9f4; }
+        .special { background-color: #fff3e0; border-color: #ff9800; }
+
+        .biome-zone.highlight {
+            transform: scale(1.05);
+            background-color: #fff !important;
+            border-style: solid;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .item {
+            width: 190px;
+            box-sizing: border-box;
+            padding: 14px;
+            background: white;
+            border: 2px solid var(--accent-blue);
+            border-radius: 10px;
+            text-align: center;
+            cursor: grab;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            font-size: 0.85rem;
+            line-height: 1.25;
+            font-weight: bold;
+            position: absolute;
+            z-index: 100;
+            pointer-events: auto;
+            transition: transform 0.1s;
+        }
+
+        .returning {
+            transition: left 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                        right 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                        top 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        }
+
+        .item:active { cursor: grabbing; transform: scale(1.1); }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(10px, -15px); }
+        }
+
+        .floating { animation: float 6s ease-in-out infinite; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .wrong { animation: shake 0.4s ease-in-out; }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen-overlay">
+        <h1>🌿 Welcome to the Integumentary System Lab</h1>
+        <p>Please enter your <b style="color: #ffcc80;">First Name and Last Initial</b> (e.g., John D.):</p>
+        <input type="text" id="student-name-input" class="name-input" placeholder="First Name Last Initial">
+        <button id="start-btn">Start Assignment</button>
+    </div>
+
+    <div id="mistake-counter">Mistakes: 0 / 5</div>
+
+    <div class="orbit-lane" id="lane-orbit"></div>
+
+    <div class="main-content" id="main-content">
+        <div id="header">
+            <h1 id="level-title">Level 1: Integumentary Structures</h1>
+            <p id="level-desc">Match each structure to the correct layer of the integumentary system.</p>
+            <div class="stats">Progress: <span id="score">0</span> / <span id="total">0</span></div>
+        </div>
+
+        <div id="biomes-area"></div>
+    </div>
+
+    <!-- NEXT LEVEL SCREEN -->
+    <div id="next-level-screen" class="screen-overlay">
+        <h1>🌟 Level 1 Complete!</h1>
+        <p>You've identified the major layers of the skin. Next, investigate how the skin performs its key functions.</p>
+        <p><b style="color: #ffcc80;">Warning: Level 2 only allows THREE mistakes!</b></p>
+        <button onclick="startLevel(2)">Start Level 2 ➡️</button>
+    </div>
+
+    <!-- FAIL SCREEN -->
+    <div id="fail-screen" class="screen-overlay">
+        <h1 style="color: var(--error-red);">❌ Level Failed!</h1>
+        <p>You reached the limit of mistakes for this level. Review the Integumentary System materials and try again!</p>
+        <button onclick="retryCurrentLevel()" style="background: var(--error-red);">Retry This Level</button>
+    </div>
+
+    <!-- CERTIFICATE SCREEN -->
+    <div id="cert-screen" class="screen-overlay">
+        <div id="certificate">
+            <div class="cert-title">Certificate of Achievement</div>
+            <div class="cert-text">This certifies that</div>
+            <div id="cert-name" class="cert-name">Student Name</div>
+            <div class="cert-text">has successfully completed the<br><b>Human Integumentary System Lab Challenge</b><br>demonstrating mastery of Skin Structure, Function, Data Analysis, and Critical Thinking.</div>
+            <div style="margin-top: 20px; font-size: 0.9rem; color: #666;">Date: <span id="cert-date"></span></div>
+        </div>
+        <div class="instruction-box">
+            📸 <b>ACTION REQUIRED:</b> Take a screenshot of this certificate and upload the file to Google Classroom to receive credit!
+        </div>
+        <button onclick="location.reload()">Restart Activity</button>
+    </div>
+
+    <script>
+        const levelData = {
+            1: {
+                title: "Level 1: Integumentary Structures",
+                desc: "Investigate the skin by matching each structure to its location and primary function.",
+                maxMistakes: 5,
+                biomes: [
+                    { id: 'epidermis', name: 'Epidermis', class: 'land', text: 'Outer epidermis<br>Protective barrier' },
+                    { id: 'dermis', name: 'Dermis', class: 'water', text: 'Underlying dermis<br>Temperature control and sensation' },
+                    { id: 'hypodermis', name: 'Hypodermis', class: 'special', text: 'Subcutaneous layer<br>Insulation and cushioning' }
+                ],
+                items: [
+                    { text: 'Stratum corneum', biome: 'epidermis' },
+                    { text: 'Melanocytes', biome: 'epidermis' },
+                    { text: 'Sweat glands', biome: 'dermis' },
+                    { text: 'Sensory receptors', biome: 'dermis' },
+                    { text: 'Adipose tissue', biome: 'hypodermis' },
+                    { text: 'Loose connective tissue', biome: 'hypodermis' }
+                ]
+            },
+            2: {
+                title: "Level 2: Skin Function Lab",
+                desc: "Drag each skin function to the correct body-system category in this inquiry lab.",
+                maxMistakes: 3,
+                biomes: [
+                    { id: 'barrier', name: 'Protection', class: 'special', text: 'Protection & Barrier' },
+                    { id: 'regulation', name: 'Regulation', class: 'water', text: 'Temperature & Fluid Regulation' },
+                    { id: 'communication', name: 'Communication', class: 'land', text: 'Sensation & Communication' }
+                ],
+                items: [
+                    { text: 'Prevents water loss and blocks microbes', biome: 'barrier' },
+                    { text: 'Produces vitamin D with UV exposure', biome: 'barrier' },
+                    { text: 'Sweating cools the body', biome: 'regulation' },
+                    { text: 'Vasodilation increases blood flow to the skin', biome: 'regulation' },
+                    { text: 'Detects touch, pain, and temperature', biome: 'communication' },
+                    { text: 'Supports emotional expression through color and texture', biome: 'communication' }
+                ]
+            },
+            3: {
+                title: "Level 3: Skin Temperature Data Analysis",
+                desc: "Analyze a laboratory-style temperature data set and explain how the integumentary system responds to changing conditions.",
+                maxMistakes: 2,
+                isQuiz: true,
+                data: {
+                    table: `
+                        <table style='width:100%; border-collapse:collapse; background:white; color:black; font-family:sans-serif; font-size:0.9rem; border: 2px solid black;'>
+                            <tr style='background:#ccc;'><th style='border: 1px solid black; padding: 8px;'>Condition</th><th style='border: 1px solid black; padding: 8px;'>Skin Temperature</th><th style='border: 1px solid black; padding: 8px;'>Sweat Rate</th><th style='border: 1px solid black; padding: 8px;'>Skin Blood Flow</th></tr>
+                            <tr style='text-align:center;'><td style='border: 1px solid black; padding: 8px; font-weight:bold;'>Cool environment</td><td style='border: 1px solid black; padding: 8px;'>31°C</td><td style='border: 1px solid black; padding: 8px;'>Low</td><td style='border: 1px solid black; padding: 8px;'>Low</td></tr>
+                            <tr style='text-align:center;'><td style='border: 1px solid black; padding: 8px; font-weight:bold;'>Moderate activity</td><td style='border: 1px solid black; padding: 8px;'>35°C</td><td style='border: 1px solid black; padding: 8px;'>Moderate</td><td style='border: 1px solid black; padding: 8px;'>Moderate</td></tr>
+                            <tr style='text-align:center;'><td style='border: 1px solid black; padding: 8px; font-weight:bold;'>High heat activity</td><td style='border: 1px solid black; padding: 8px;'>38°C</td><td style='border: 1px solid black; padding: 8px;'>High</td><td style='border: 1px solid black; padding: 8px;'>High</td></tr>
+                        </table>
+                    `,
+                    questions: [
+                        { q: "Which response is most likely in a cool environment?", options: ["High sweat rate", "Low skin blood flow", "High skin temperature", "No sweating"], correct: 1 },
+                        { q: "What does a high sweat rate help the body do during high heat activity?", options: ["Increase skin blood flow", "Cool the body through evaporation", "Stop vitamin D production", "Decrease sensation"], correct: 1 },
+                        { q: "Why does skin blood flow increase during moderate activity?", options: ["To reduce water loss", "To deliver heat to the skin for cooling", "To create more melanin", "To replace sweat glands"], correct: 1 },
+                        { q: "Which observation best supports the claim that the skin helps regulate body temperature?", options: ["Skin temperature stays constant in all conditions", "Sweat and blood flow change with heat exposure", "Skin temperature always rises with activity", "Sweat glands stop in heat"], correct: 1 }
+                    ]
+                }
+            },
+            4: {
+                title: "Level 4: UV Exposure & Skin Repair",
+                desc: "Interpret the experimental data on ultraviolet exposure and skin repair. Use evidence to select the best explanation.",
+                maxMistakes: 1,
+                isQuiz: true,
+                data: {
+                    table: `
+                        <table style='width:100%; border-collapse:collapse; background:white; color:black; font-family:sans-serif; font-size:0.9rem; border: 2px solid black;'>
+                            <tr style='background:#ccc;'><th style='border: 1px solid black; padding: 8px;'>Group</th><th style='border: 1px solid black; padding: 8px;'>UV Exposure</th><th style='border: 1px solid black; padding: 8px;'>Average Repair Time</th><th style='border: 1px solid black; padding: 8px;'>Skin Damage</th></tr>
+                            <tr style='text-align:center;'><td style='border: 1px solid black; padding: 8px; font-weight:bold;'>A</td><td style='border: 1px solid black; padding: 8px;'>None</td><td style='border: 1px solid black; padding: 8px;'>2 days</td><td style='border: 1px solid black; padding: 8px;'>Low</td></tr>
+                            <tr style='text-align:center;'><td style='border: 1px solid black; padding: 8px; font-weight:bold;'>B</td><td style='border: 1px solid black; padding: 8px;'>Moderate</td><td style='border: 1px solid black; padding: 8px;'>5 days</td><td style='border: 1px solid black; padding: 8px;'>Moderate</td></tr>
+                            <tr style='text-align:center;'><td style='border: 1px solid black; padding: 8px; font-weight:bold;'>C</td><td style='border: 1px solid black; padding: 8px;'>High</td><td style='border: 1px solid black; padding: 8px;'>11 days</td><td style='border: 1px solid black; padding: 8px;'>High</td></tr>
+                        </table>
+                    `,
+                    questions: [
+                        { q: "Which group shows the lowest average skin damage?", options: ["Group A", "Group B", "Group C", "All groups are equal"], correct: 0 },
+                        { q: "What does the increase in repair time with UV exposure most likely indicate?", options: ["UV exposure creates more skin damage", "The skin becomes thinner", "Repair cells are inactive", "UV exposure stops sweating"], correct: 0 },
+                        { q: "Which explanation best fits the data?", options: ["High UV exposure speeds repair", "High UV exposure causes more damage and slower repair", "Low UV exposure causes more damage", "Repair time is unrelated to UV exposure"], correct: 1 },
+                        { q: "What is the best protective action supported by these results?", options: ["Avoid UV protection", "Increase UV exposure", "Limit excessive UV exposure and use protection", "Apply heat to the skin"], correct: 2 }
+                    ]
+                }
+            },
+            5: {
+                title: "Level 5: Critical Thinking: Burn Recovery",
+                desc: "Investigate a patient case and use evidence from the skin's barrier, repair, and temperature-control functions to choose the best next step.",
+                maxMistakes: 1,
+                isQuiz: true,
+                data: {
+                    table: `
+                        <div style='background:white; color:black; padding:15px; border:2px solid black; font-family:sans-serif; font-size:0.9rem;'>
+                            <b style='font-size:1.1rem;'>Clinical Inquiry: Maya, 16</b><br><br>
+                            Maya has a second-degree burn on her forearm. The area is swollen, very red, and shallow fluid is leaking from the surface. She reports pain when the area is touched. Her overall temperature is normal, and she can move her fingers normally.<br>
+                            <br><b>Lab results:</b> Skin cells are damaged, but the deeper layers remain intact. The wound is clean and the patient is not showing signs of infection.
+                        </div>
+                    `,
+                    questions: [
+                        { q: "Which skin layer is most directly affected by this burn?", options: ["Epidermis and part of the dermis", "Hypodermis only", "The entire skeleton", "The sweat gland system only"], correct: 0 },
+                        { q: "Why is pain a useful clue in this case?", options: ["Pain means the skin's sensory receptors are active", "Pain proves the body is cold", "Pain is caused only by infection", "Pain prevents skin repair"], correct: 0 },
+                        { q: "What is the best immediate action based on the evidence?", options: ["Apply heat to the wound", "Cool the area and seek medical assessment", "Remove the skin layer with a knife", "Expose the wound to sunlight"], correct: 1 },
+                        { q: "Which statement best explains why the deeper layers remain intact?", options: ["The burn removed all skin layers", "The burn is limited to the superficial epidermis and upper dermis", "The hypodermis cannot be damaged", "The skin is not living tissue"], correct: 1 }
+                    ]
+                }
+            },
+            6: {
+                title: "Level 6: Integumentary Lab Forecast",
+                desc: "Use a patient data set to predict the likely outcome of a skin condition and justify your recommendation with evidence.",
+                maxMistakes: 1,
+                isQuiz: true,
+                data: {
+                    table: `
+                        <div style='background:white; color:black; padding:15px; border:2px solid black; font-family:sans-serif; font-size:0.9rem;'>
+                            <b style='font-size:1.1rem;'>Clinical Data: Jordan, 14</b><br><br>
+                            - <b>Condition:</b> Repeated itchy rash on the forearms<br>
+                            - <b>Duration:</b> 6 days<br>
+                            - <b>Exposure:</b> Increased outdoor UV exposure and sweating<br>
+                            - <b>Temperature:</b> Normal<br>
+                            - <b>Skin findings:</b> Redness, scaling, and small blisters; no pus or spreading redness<br>
+                            - <b>Previous history:</b> No known allergies or skin disease
+                        </div>
+                    `,
+                    questions: [
+                        { q: "What evidence suggests the condition may be related to UV exposure?", options: ["The rash is only present during sweating", "The rash appears on exposed forearms", "The temperature is normal", "The patient has no allergies"], correct: 1 },
+                        { q: "Which integumentary response should be evaluated first?", options: ["Bone remodeling", "Skin barrier and repair", "Red blood cell production", "Digestive enzyme activity"], correct: 1 },
+                        { q: "What is the most reasonable next step?", options: ["Ignore the rash until it disappears", "Protect the skin from further UV exposure and seek clinical advice", "Apply heat to the rash", "Scratch the blisters"], correct: 1 },
+                        { q: "Why is the absence of pus or spreading redness important?", options: ["It proves the rash is harmless", "It suggests the condition is not currently an infection", "It prevents temperature control", "It replaces the epidermis"], correct: 1 }
+                    ]
+                }
+            }
+        };
+
+        let levelScores = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        let levelTrials = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        let levelTimes = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        let completedLevels = { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false };
+        let studentName = "";
+        let currentLevel = 1;
+        let score = 0;
+        let mistakes = 0;
+        let currentMaxMistakes = 5;
+        let activeItem = null;
+        let offsetX = 0;
+        let offsetY = 0;
+        let scrollInterval = null;
+        let levelStartTime = 0;
+
+        function beginGame() {
+            console.log("beginGame called");
+            const input = document.getElementById('student-name-input');
+            if (!input) {
+                console.error("Could not find student-name-input element");
+                return;
+            }
+            const val = input.value.trim();
+            console.log("Input value:", val);
+            if (val === "") {
+                alert("Please enter your name to start the assignment!");
+                return;
+            }
+            studentName = val;
+            console.log("Student name set to:", studentName);
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'flex';
+            document.getElementById('mistake-counter').style.display = 'block';
+            startLevel(1);
+        }
+
+        // Add event listener for the start button explicitly
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('start-btn');
+            if (startBtn) {
+                startBtn.addEventListener('click', beginGame);
+                console.log("Start button event listener attached");
+            } else {
+                console.error("Start button not found in DOM");
+            }
+        });
+
+        function retryCurrentLevel() {
+            document.getElementById('fail-screen').style.display = 'none';
+            
+            // Reset all items to their resting positions before restarting level logic
+            document.querySelectorAll('.item').forEach(item => {
+                item.classList.remove('wrong', 'returning');
+                item.style.position = 'absolute';
+                item.style.pointerEvents = 'auto';
+                const side = item.dataset.homeSide;
+                if (side === 'left') {
+                    item.style.right = 'auto';
+                    item.style.left = '20px';
+                } else {
+                    item.style.left = 'auto';
+                    item.style.right = '20px';
+                }
+                item.style.top = (parseFloat(item.dataset.homeY) + window.scrollY) + 'px';
+                document.getElementById('lane-orbit').appendChild(item);
+            });
+
+            startLevel(currentLevel);
+        }
+
+        function startLevel(lvl) {
+            document.getElementById('next-level-screen').style.display = 'none';
+            document.getElementById('fail-screen').style.display = 'none';
+            
+            currentLevel = lvl;
+            score = 0;
+            mistakes = 0;
+            currentMaxMistakes = levelData[lvl].maxMistakes;
+            levelTrials[lvl]++;
+            levelStartTime = Date.now();
+            
+            document.getElementById('mistake-counter').innerText = `Mistakes: 0 / ${currentMaxMistakes}`;
+            document.getElementById('level-title').innerText = levelData[lvl].title;
+            document.getElementById('level-desc').innerHTML = levelData[lvl].desc;
+            document.getElementById('score').innerText = "0";
+            document.getElementById('total').innerText = levelData[lvl].isQuiz ? levelData[lvl].data.questions.length : levelData[lvl].items.length;
+
+            // 1. Clear the main game areas
+            document.getElementById('biomes-area').innerHTML = "";
+            document.getElementById('lane-orbit').innerHTML = "";
+            
+            // 2. CRITICAL: Remove ALL items from the DOM regardless of where they are attached
+            // This prevents residual buttons from previous levels appearing
+            document.querySelectorAll('.item').forEach(item => item.remove());
+
+            if (levelData[lvl].isQuiz) {
+                renderQuiz(lvl);
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'grid-container';
+            levelData[lvl].biomes.forEach(b => {
+                const zone = document.createElement('div');
+                zone.className = `biome-zone ${b.class}`;
+                zone.dataset.biome = b.id;
+                zone.innerHTML = b.text;
+                grid.appendChild(zone);
+            });
+            
+            const title = document.createElement('div');
+            title.className = 'section-title';
+            title.innerText = lvl === 1 ? "Skin Layers & Structures" : (lvl === 2 ? "Skin Functions" : "Inquiry Lab");
+            
+            document.getElementById('biomes-area').appendChild(title);
+            document.getElementById('biomes-area').appendChild(grid);
+
+            const shuffledItems = shuffle([...levelData[lvl].items]);
+            spawnItems(shuffledItems);
+        }
+
+        function renderQuiz(lvl) {
+            const area = document.getElementById('biomes-area');
+            const quizData = levelData[lvl].data;
+            
+            const container = document.createElement('div');
+            container.style.width = '100%';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.alignItems = 'center';
+            container.style.marginTop = '30px';
+
+            const tableDiv = document.createElement('div');
+            tableDiv.style.marginBottom = '40px';
+            tableDiv.innerHTML = quizData.table;
+            container.appendChild(tableDiv);
+
+            const qDiv = document.createElement('div');
+            qDiv.id = 'quiz-question-container';
+            qDiv.style.textAlign = 'center';
+            qDiv.style.width = '100%';
+            container.appendChild(qDiv);
+
+            area.appendChild(container);
+            showQuestion(lvl, 0);
+        }
+
+        function showQuestion(lvl, qIdx) {
+            const qContainer = document.getElementById('quiz-question-container');
+            const qData = levelData[lvl].data.questions[qIdx];
+            
+            // Create a copy of options with their original indices to maintain correct answers
+            const optionsWithIndices = qData.options.map((opt, i) => ({ text: opt, index: i }));
+            // Shuffle the options
+            const shuffledOptions = shuffle([...optionsWithIndices]);
+            
+            qContainer.innerHTML = `
+                <div style="font-size:1.4rem; font-weight:bold; margin-bottom:20px;">Question ${qIdx + 1}: ${qData.q}</div>
+                <div class="grid-container" style="grid-template-columns: repeat(2, 1fr);">
+                    ${shuffledOptions.map(optObj => `
+                        <button onclick="checkQuizAnswer(${lvl}, ${qIdx}, ${optObj.index})" style="background:white; color:black; border:2px solid var(--accent-blue); text-align:left; font-weight:normal;">${optObj.text}</button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function checkQuizAnswer(lvl, qIdx, selectedIdx) {
+            const qData = levelData[lvl].data.questions[qIdx];
+            if (selectedIdx === qData.correct) {
+                score++;
+                document.getElementById('score').innerText = score;
+                if (qIdx + 1 < levelData[lvl].data.questions.length) {
+                    showQuestion(lvl, qIdx + 1);
+                } else {
+                    levelScores[lvl] = score;
+                    levelTimes[lvl] = Math.floor((Date.now() - levelStartTime) / 1000);
+                    completedLevels[lvl] = true;
+                    handleLevelCompletion();
+                }
+            } else {
+                mistakes++;
+                document.getElementById('mistake-counter').innerText = `Mistakes: ${mistakes} / ${currentMaxMistakes}`;
+                if (mistakes >= currentMaxMistakes) {
+                    document.getElementById('fail-screen').style.display = 'flex';
+                } else {
+                    alert("Incorrect! Try again.");
+                }
+            }
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function spawnItems(items) {
+            const lane = document.getElementById('lane-orbit');
+            items.forEach((item, index) => {
+                const el = document.createElement('div');
+                el.className = 'item floating';
+                el.innerText = item.text;
+                el.dataset.biome = item.biome;
+                const side = index % 2 === 0 ? 'left' : 'right';
+                const spacing = currentLevel === 2 ? 180 : 110;
+                const startY = currentLevel === 2 ? 70 : (side === 'left' ? 80 : 140);
+                const targetY = startY + (Math.floor(index / 2) * spacing);
+                if (side === 'left') { el.style.left = '20px'; el.style.right = 'auto'; } else { el.style.right = '20px'; el.style.left = 'auto'; }
+                el.dataset.homeSide = side;
+                el.dataset.homeY = targetY;
+                el.style.top = targetY + 'px';
+                el.style.animationDelay = (Math.random() * 5) + 's';
+                el.addEventListener('mousedown', (e) => {
+                    activeItem = el;
+                    el.classList.remove('floating', 'returning');
+                    const rect = el.getBoundingClientRect();
+                    offsetX = e.clientX - rect.left;
+                    offsetY = e.clientY - rect.top;
+                    document.body.appendChild(el);
+                    el.style.right = 'auto';
+                    el.style.left = (e.pageX - offsetX) + 'px';
+                    el.style.top = (e.pageY - offsetY) + 'px';
+                    el.style.zIndex = 1000;
+                });
+                lane.appendChild(el);
+            });
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            if (!activeItem) return;
+            activeItem.style.left = (e.pageX - offsetX) + 'px';
+            activeItem.style.top = (e.pageY - offsetY) + 'px';
+            const scrollThreshold = 100; const scrollSpeed = 12;
+            if (e.clientY < scrollThreshold) {
+                if (!scrollInterval) scrollInterval = setInterval(() => window.scrollBy(0, -scrollSpeed), 16);
+            } else if (e.clientY > window.innerHeight - scrollThreshold) {
+                if (!scrollInterval) scrollInterval = setInterval(() => window.scrollBy(0, scrollSpeed), 16);
+            } else { clearInterval(scrollInterval); scrollInterval = null; }
+            document.querySelectorAll('.biome-zone').forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                if (e.clientX > rect.left && e.clientX < rect.right && e.clientY > rect.top && e.clientY < rect.bottom) {
+                    zone.classList.add('highlight');
+                } else { zone.classList.remove('highlight'); }
+            });
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!activeItem) return;
+            const item = activeItem;
+            activeItem = null;
+            clearInterval(scrollInterval);
+            scrollInterval = null;
+            item.style.pointerEvents = 'none';
+            const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+            const zone = elementBelow ? elementBelow.closest('.biome-zone') : null;
+            if (zone) {
+                if (zone.dataset.biome === item.dataset.biome) {
+                    score++;
+                    document.getElementById('score').innerText = score;
+                    item.style.position = 'static';
+                    item.style.margin = '5px';
+                    item.style.left = 'auto'; item.style.right = 'auto'; item.style.top = 'auto';
+                    item.classList.remove('floating', 'returning');
+                    item.style.animation = 'none'; item.style.cursor = 'default'; item.style.pointerEvents = 'auto';
+                    zone.appendChild(item);
+                    item.onmousedown = null;
+                    if (score === levelData[currentLevel].items.length) {
+                        levelScores[currentLevel] = score;
+                        levelTimes[currentLevel] = Math.floor((Date.now() - levelStartTime) / 1000);
+                        completedLevels[currentLevel] = true;
+                        handleLevelCompletion();
+                    }
+                } else {
+                    mistakes++;
+                    document.getElementById('mistake-counter').innerText = `Mistakes: ${mistakes} / ${currentMaxMistakes}`;
+                    if (mistakes >= currentMaxMistakes) { document.getElementById('fail-screen').style.display = 'flex'; return; }
+                    item.classList.add('wrong');
+                    setTimeout(() => {
+                        item.classList.remove('wrong'); item.classList.add('returning');
+                        const side = item.dataset.homeSide;
+                        if (side === 'left') { item.style.right = 'auto'; item.style.left = '20px'; } else { item.style.left = 'auto'; item.style.right = '20px'; }
+                        item.style.top = (parseFloat(item.dataset.homeY) + window.scrollY) + 'px';
+                        setTimeout(() => { item.classList.remove('returning'); document.getElementById('lane-orbit').appendChild(item); item.style.pointerEvents = 'auto'; }, 600);
+                    }, 400);
+                }
+            } else {
+                item.classList.add('returning');
+                const side = item.dataset.homeSide;
+                if (side === 'left') { item.style.right = 'auto'; item.style.left = '20px'; } else { item.style.left = 'auto'; item.style.right = '20px'; }
+                item.style.top = (parseFloat(item.dataset.homeY) + window.scrollY) + 'px';
+                setTimeout(() => { item.classList.remove('returning'); document.getElementById('lane-orbit').appendChild(item); item.style.pointerEvents = 'auto'; }, 600);
+            }
+        });
+
+        function showCertificate() {
+            // SECURITY CHECK: Ensure all levels are completed
+            const allDone = Object.values(completedLevels).every(val => val === true);
+            if (!allDone) {
+                alert("Access Denied: You must complete all levels in order to receive your certificate!");
+                startLevel(1); // Send them back to the start
+                return;
+            }
+
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('mistake-counter').style.display = 'none';
+            document.getElementById('cert-screen').style.display = 'flex';
+            document.getElementById('certificate').style.display = 'block';
+            document.getElementById('cert-name').innerText = studentName;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString();
+
+            // Calculate overall percentage
+            let totalPossible = 0;
+            let totalEarned = 0;
+            for (let lvl in levelData) {
+                totalPossible += levelData[lvl].isQuiz ? levelData[lvl].data.questions.length : levelData[lvl].items.length;
+                totalEarned += levelScores[lvl] || 0;
+            }
+            const percentage = Math.round((totalEarned / totalPossible) * 100);
+
+            // Create score and trial table HTML
+            let tableHtml = `
+                <div style="margin: 20px 0; color: #555;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 1.1rem; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #b8860b;">
+                                <th style="padding: 10px; text-align: left;">Level</th>
+                                <th style="padding: 10px; text-align: center;">Score</th>
+                                <th style="padding: 10px; text-align: center;">Trials</th>
+                                <th style="padding: 10px; text-align: center;">Time (s)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            for (let i = 1; i <= 6; i++) {
+                const possible = levelData[i].isQuiz ? levelData[i].data.questions.length : levelData[i].items.length;
+                tableHtml += `
+                    <tr>
+                        <td style="padding: 8px; text-align: left;">Level ${i}</td>
+                        <td style="padding: 8px; text-align: center;">${levelScores[i]}/${possible}</td>
+                        <td style="padding: 8px; text-align: center;">${levelTrials[i]}</td>
+                        <td style="padding: 8px; text-align: center;">${levelTimes[i]}s</td>
+                    </tr>
+                `;
+            }
+            tableHtml += `</tbody></table></div>
+                <div style="font-size: 1.8rem; font-weight: bold; color: #b8860b; margin-bottom: 20px;">Overall Score: ${percentage}%</div>`;
+
+            // Insert score breakdown before the date
+            const certDiv = document.getElementById('certificate');
+            const dateDiv = certDiv.querySelector('div:last-child');
+            const scoreDiv = document.createElement('div');
+            scoreDiv.innerHTML = tableHtml;
+            certDiv.insertBefore(scoreDiv, dateDiv);
+        }
+
+        // Update next level progression for the six clinical inquiry levels
+        function handleLevelCompletion() {
+            if (currentLevel === 1) {
+                document.getElementById('next-level-screen').innerHTML = `
+                    <h1>🌟 Level 1 Complete!</h1>
+                    <p>You've identified the major layers of the skin. Next, investigate how the skin performs its key functions.</p>
+                    <p><b style="color: #ffcc80;">Warning: Level 2 allows 3 mistakes!</b></p>
+                    <button onclick="startLevel(2)">Start Level 2 ➡️</button>
+                `;
+                document.getElementById('next-level-screen').style.display = 'flex';
+            } else if (currentLevel === 2) {
+                document.getElementById('next-level-screen').innerHTML = `
+                    <h1>🌟 Level 2 Complete!</h1>
+                    <p>Great job! Now examine how the skin regulates temperature and responds to changing conditions.</p>
+                    <p><b style="color: #ffcc80;">Warning: Level 3 only allows 2 mistakes!</b></p>
+                    <button onclick="startLevel(3)">Start Level 3 ➡️</button>
+                `;
+                document.getElementById('next-level-screen').style.display = 'flex';
+            } else if (currentLevel === 3) {
+                document.getElementById('next-level-screen').innerHTML = `
+                    <h1>🌟 Level 3 Complete!</h1>
+                    <p>You've analyzed skin temperature data. Now investigate how UV exposure affects skin repair.</p>
+                    <p><b style="color: #ffcc80;">Warning: Level 4 allows ONLY ONE mistake!</b></p>
+                    <button onclick="startLevel(4)">Start Level 4 ➡️</button>
+                `;
+                document.getElementById('next-level-screen').style.display = 'flex';
+            } else if (currentLevel === 4) {
+                document.getElementById('next-level-screen').innerHTML = `
+                    <h1>🌟 Level 4 Complete!</h1>
+                    <p>You've interpreted skin repair data. Now apply your evidence-based reasoning to a burn case.</p>
+                    <p><b style="color: #ffcc80;">Warning: Level 5 allows ONLY ONE mistake!</b></p>
+                    <button onclick="startLevel(5)">Start Level 5 ➡️</button>
+                `;
+                document.getElementById('next-level-screen').style.display = 'flex';
+            } else if (currentLevel === 5) {
+                document.getElementById('next-level-screen').innerHTML = `
+                    <h1>🌟 Level 5 Complete!</h1>
+                    <p>You've solved the burn investigation. Now use clinical evidence to predict the outcome of a skin condition.</p>
+                    <p><b style="color: #ffcc80;">Warning: Level 6 allows ONLY ONE mistake!</b></p>
+                    <button onclick="startLevel(6)">Start Level 6 ➡️</button>
+                `;
+                document.getElementById('next-level-screen').style.display = 'flex';
+            } else {
+                showCertificate();
+            }
+        }
+    </script>
+</body>
+</html>
